@@ -1,0 +1,37 @@
+services:
+  postgresql:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+
+  temporal-server:
+    image: temporalio/auto-setup:1.26.0
+    depends_on:
+      - postgresql
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+    ports:
+      - "7233:7233"
+
+  temporal-web:
+    image: temporalio/ui:2.35.0
+    depends_on:
+      - temporal-server
+    environment:
+      - TEMPORAL_ADDRESS=temporal-server:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8233:8080"
+
+volumes:
+  postgresql_data:

@@ -1,0 +1,14 @@
+{
+  "name": "saga",
+  "private": true,
+  "scripts": {
+    "dev:api": "pnpm --filter @saga/core dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "tsx": "catalog:",
+    "@types/node": "catalog:"
+  }
+}
