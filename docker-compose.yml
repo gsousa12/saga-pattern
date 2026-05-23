@@ -9,9 +9,10 @@ services:
       - "5432:5432"
     volumes:
       - postgresql_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   temporal-server:
-    image: temporalio/auto-setup:1.26.0
+    image: temporalio/auto-setup:1.29.1
     depends_on:
       - postgresql
     environment:
@@ -24,7 +25,7 @@ services:
       - "7233:7233"
 
   temporal-web:
-    image: temporalio/ui:2.35.0
+    image: temporalio/ui:2.34.0
     depends_on:
       - temporal-server
     environment:
