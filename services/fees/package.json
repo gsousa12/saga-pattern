@@ -4,17 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "worker": "tsx src/worker.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "fastify": "^5.2.0",
-    "@saga/types": "workspace:*"
+    "@saga/types": "workspace:*",
+    "@temporalio/activity": "catalog:",
+    "@temporalio/worker": "catalog:",
+    "fastify": "^5.2.0"
   },
   "devDependencies": {
-    "typescript": "catalog:",
+    "@types/node": "catalog:",
     "tsx": "catalog:",
-    "@types/node": "catalog:"
+    "typescript": "catalog:"
   }
 }
