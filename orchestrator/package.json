@@ -1,0 +1,13 @@
+{
+  "name": "orchestrator-root",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:order": "pnpm --filter order-service dev",
+    "dev:payment": "pnpm --filter payment-service dev",
+    "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
