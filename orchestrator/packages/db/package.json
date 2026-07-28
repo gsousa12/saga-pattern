@@ -17,9 +17,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "db:generate": "drizzle-kit generate --config src/drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config src/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config src/drizzle.config.ts"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "drizzle-orm": "^0.33.0",
