@@ -45,6 +45,9 @@ importers:
 
   packages/types:
     devDependencies:
+      '@orchestrator/enums':
+        specifier: workspace:*
+        version: link:../enums
       typescript:
         specifier: ^5.5.0
         version: 5.9.3

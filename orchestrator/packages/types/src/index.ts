@@ -1,5 +1,2 @@
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-};
+export * from './entities/product.entity';
+export * from './entities/order.entity';
