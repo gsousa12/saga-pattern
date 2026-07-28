@@ -5,7 +5,10 @@
     "build": "pnpm -r build",
     "dev:order": "pnpm --filter order-service dev",
     "dev:payment": "pnpm --filter payment-service dev",
-    "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service dev"
+    "dev:stock": "pnpm --filter stock-service dev",
+    "dev:notification": "pnpm --filter notification-service dev",
+    "dev:orchestrator": "pnpm --filter orchestrator-service dev",
+    "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service --filter stock-service --filter notification-service --filter orchestrator-service dev"
   },
   "devDependencies": {
     "typescript": "^5.5.0"
