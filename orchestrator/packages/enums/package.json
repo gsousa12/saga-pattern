@@ -1,5 +1,5 @@
 {
-  "name": "@orchestrator/db",
+  "name": "@orchestrator/enums",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,20 +16,9 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
-  },
-  "dependencies": {
-    "@orchestrator/enums": "workspace:*",
-    "drizzle-orm": "^0.33.0",
-    "pg": "^8.12.0"
+    "build": "tsc"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/pg": "^8.11.0",
-    "drizzle-kit": "^0.24.0",
     "typescript": "^5.5.0"
   }
 }

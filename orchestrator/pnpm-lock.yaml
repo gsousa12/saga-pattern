@@ -14,6 +14,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@orchestrator/enums':
+        specifier: workspace:*
+        version: link:../enums
       drizzle-orm:
         specifier: ^0.33.0
         version: 0.33.0(@types/pg@8.20.0)(pg@8.22.0)
@@ -30,6 +33,12 @@ importers:
       drizzle-kit:
         specifier: ^0.24.0
         version: 0.24.2
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/enums:
+    devDependencies:
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
