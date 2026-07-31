@@ -8,4 +8,6 @@ export async function createDb(connectionString: string) {
   return drizzle(client, { schema });
 }
 
+export type DbInstance = Awaited<ReturnType<typeof createDb>>;
+
 export * from './schema';
