@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "fastify": "^4.28.0",
-    "@orchestrator/types": "workspace:*"
+    "@orchestrator/db": "workspace:*",
+    "@orchestrator/types": "workspace:*",
+    "kafkajs": "^2.2.4"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
