@@ -1,3 +1,0 @@
-### Payment Service Health Check
-
-GET http://localhost:3002/health

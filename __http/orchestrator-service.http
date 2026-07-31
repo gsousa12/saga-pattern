@@ -1,3 +1,0 @@
-### Orchestrator Service Health Check
-
-GET http://localhost:3000/health

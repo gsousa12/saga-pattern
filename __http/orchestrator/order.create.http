@@ -1,0 +1,9 @@
+### Create Order
+POST http://localhost:3000/orders
+Content-Type: application/json
+
+{
+  "productId": "b1f0316c-0e5c-4450-96a6-721bc701faf2",
+  "quantity": 2,
+  "totalPrice": 199.98
+}

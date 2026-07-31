@@ -1,3 +1,0 @@
-### Notification Service Health Check
-
-GET http://localhost:3004/health
