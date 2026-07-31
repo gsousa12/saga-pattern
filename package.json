@@ -14,6 +14,6 @@
     "db:studio": "pnpm --filter @orchestrator/db db:studio"
   },
   "devDependencies": {
-    "typescript": "^5.5.0"
+    "typescript": "^5.9.3"
   }
 }
