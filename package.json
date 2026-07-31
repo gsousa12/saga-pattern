@@ -8,7 +8,8 @@
     "dev:stock": "pnpm --filter stock-service dev",
     "dev:notification": "pnpm --filter notification-service dev",
     "dev:orchestrator": "pnpm --filter orchestrator-service dev",
-    "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service --filter stock-service --filter notification-service --filter orchestrator-service dev",
+    "dev:gateway": "pnpm --filter gateway dev",
+    "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service --filter stock-service --filter notification-service --filter orchestrator-service --filter gateway dev",
     "db:generate": "pnpm --filter @orchestrator/db db:generate",
     "db:migrate": "pnpm --filter @orchestrator/db db:migrate",
     "db:studio": "pnpm --filter @orchestrator/db db:studio"

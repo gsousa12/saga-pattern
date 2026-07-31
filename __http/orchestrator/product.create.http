@@ -4,6 +4,6 @@ Content-Type: application/json
 
 {
   "name": "Headphones",
-  "price": "",
+  "price": 99.99,
   "description": "Noise cancelling wireless headphones"
 }
