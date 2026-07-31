@@ -1,36 +1,15 @@
-import { createConsumer, getProducer } from "../_common/kafka";
+import { createConsumer, getProducer, withRetry } from "../_common/kafka";
 import { getDbInstance } from "../_common/db";
 import { orders } from "@orchestrator/db";
-
-async function retry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 15,
-  baseDelay = 2000,
-): Promise<T> {
-  let lastError: unknown;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      const delay = baseDelay * (i + 1);
-      console.log(
-        `Kafka consumer setup attempt ${i + 1}/${maxRetries} failed, retrying in ${delay}ms...`,
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-  throw lastError;
-}
 
 export async function startOrderWorker() {
   const consumer = await createConsumer("order-service-group");
 
-  await retry(async () => {
+  await withRetry(async () => {
     await consumer.subscribe({ topic: "orders.create", fromBeginning: false });
-  });
+  }, { label: "Kafka consumer subscribe" });
 
-  await retry(async () => {
+  await withRetry(async () => {
     await consumer.run({
       eachMessage: async ({ message }) => {
         if (!message.value) return;
@@ -54,5 +33,5 @@ export async function startOrderWorker() {
         });
       },
     });
-  });
+  }, { label: "Kafka consumer run" });
 }

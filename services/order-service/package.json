@@ -9,12 +9,13 @@
   "dependencies": {
     "fastify": "^4.28.0",
     "@orchestrator/db": "workspace:*",
-    "@orchestrator/types": "workspace:*",
-    "kafkajs": "^2.2.4"
+    "@orchestrator/kafka": "workspace:*",
+    "@orchestrator/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.5.0",
-    "tsx": "^4.16.0"
+    "kafkajs": "^2.2.4",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
   }
 }

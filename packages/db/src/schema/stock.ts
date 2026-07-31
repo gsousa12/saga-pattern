@@ -1,12 +1,13 @@
 import { pgTable, uuid, integer, timestamp } from "drizzle-orm/pg-core";
 import { products } from "./product";
 
-export const batches = pgTable("batches", {
+export const stock = pgTable("stock", {
   id: uuid("id").defaultRandom().primaryKey(),
   productId: uuid("product_id")
     .notNull()
     .references(() => products.id),
-  quantity: integer("quantity").notNull(),
+  availableQuantity: integer("available_quantity").notNull(),
+  reservedQuantity: integer("reserved_quantity").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -16,5 +17,5 @@ export const batches = pgTable("batches", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
-export type BatchEntityType = typeof batches.$inferSelect;
-export type CreateBatchType = typeof batches.$inferInsert;
+export type Stock = typeof stock.$inferSelect;
+export type StockInsert = typeof stock.$inferInsert;
