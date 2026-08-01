@@ -1,9 +1,0 @@
-### Create Order
-POST http://localhost:3000/orders
-Content-Type: application/json
-
-{
-  "productId": "2cce93e6-3ed0-43e3-9473-0756c2261bb8",
-  "quantity": 2,
-  "totalPrice": 199.98
-}
