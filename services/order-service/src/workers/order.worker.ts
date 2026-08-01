@@ -17,14 +17,17 @@ export async function startOrderWorker() {
         const payload = JSON.parse(message.value.toString());
         const db = await getDbInstance();
 
-        const [order] = await db
-          .insert(orders)
-          .values({
-            productId: payload.productId,
-            quantity: payload.quantity,
-            totalPrice: payload.totalPrice,
-          })
-          .returning();
+        const order = await db.transaction(async (tx) => {
+          const [result] = await tx
+            .insert(orders)
+            .values({
+              productId: payload.productId,
+              quantity: payload.quantity,
+              totalPrice: payload.totalPrice,
+            })
+            .returning();
+          return result;
+        });
 
         const producer = await getProducer();
         await producer.send({

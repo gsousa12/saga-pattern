@@ -7,10 +7,11 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "fastify": "^4.28.0",
     "@orchestrator/db": "workspace:*",
     "@orchestrator/kafka": "workspace:*",
-    "@orchestrator/types": "workspace:*"
+    "@orchestrator/types": "workspace:*",
+    "fastify": "^4.28.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
