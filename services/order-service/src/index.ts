@@ -1,18 +1,19 @@
-import fastify from "fastify";
-import { z } from "zod";
-import { PORTS, TOPICS } from "@orchestrator/constants";
-import { startOrderWorker } from "./workers/order.worker";
-import { ensureTopicsExist, getProducer } from "./_common/kafka";
-import { getDbInstance } from "./_common/db";
-import { orders } from "@orchestrator/db";
+import { PORTS, TOPICS } from '@orchestrator/constants';
+import { orders } from '@orchestrator/db';
+import fastify from 'fastify';
+import { z } from 'zod';
+
+import { getDbInstance } from './_common/db';
+import { ensureTopicsExist, getProducer } from './_common/kafka';
+import { startOrderWorker } from './workers/order.worker';
 
 const PORT = PORTS.ORDER_SERVICE;
-const HOST = "0.0.0.0";
+const HOST = '0.0.0.0';
 
 const app = fastify({ logger: true });
 
-app.get("/health", async () => {
-  return { status: "ok" };
+app.get('/health', async () => {
+  return { status: 'ok' };
 });
 
 const checkoutBodySchema = z.object({
@@ -21,7 +22,7 @@ const checkoutBodySchema = z.object({
   quantity: z.number().int().positive(),
 });
 
-app.post("/checkout", async (req, reply) => {
+app.post('/checkout', async (req, reply) => {
   const body = checkoutBodySchema.parse(req.body);
   const db = await getDbInstance();
 
@@ -31,11 +32,7 @@ app.post("/checkout", async (req, reply) => {
   const order = await db.transaction(async (tx) => {
     const [result] = await tx
       .insert(orders)
-      .values({
-        productId: body.productId,
-        quantity: body.quantity,
-        totalPrice,
-      })
+      .values({ productId: body.productId, quantity: body.quantity, totalPrice })
       .returning();
     return result;
   });
@@ -43,17 +40,10 @@ app.post("/checkout", async (req, reply) => {
   const producer = await getProducer();
   await producer.send({
     topic: TOPICS.SAGA_START_CHECKOUT,
-    messages: [
-      {
-        value: JSON.stringify({
-          idempotencyKey: body.idempotencyKey,
-          order,
-        }),
-      },
-    ],
+    messages: [{ value: JSON.stringify({ idempotencyKey: body.idempotencyKey, order }) }],
   });
 
-  return reply.status(202).send({ message: "Order created", order });
+  return reply.status(202).send({ message: 'Order created', order });
 });
 
 const start = async () => {

@@ -1,6 +1,6 @@
 import { createKafkaClient, withRetry, type Consumer, type Producer } from '@orchestrator/kafka';
 
-const client = createKafkaClient('order-service');
+const client = createKafkaClient('payment-service');
 
 export const ensureTopicsExist: typeof client.ensureTopicsExist = client.ensureTopicsExist;
 export const getProducer: () => Promise<Producer> = client.getProducer;

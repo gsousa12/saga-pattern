@@ -119,10 +119,10 @@ Cliente -> Gateway (POST /checkout)
 
 ## Kafka — Tópicos
 
-| Topico                  | Produtor              | Consumidor     | Payload                               |
-| ----------------------- | --------------------- | -------------- | ------------------------------------- |
-| `saga_start_checkout`   | order-service         | orchestrator   | `{ idempotencyKey, order }`           |
-| `command_reserve_stock` | orchestrator          | stock-service  | `{ idempotencyKey, order }`           |
+| Topico                  | Produtor      | Consumidor    | Payload                     |
+| ----------------------- | ------------- | ------------- | --------------------------- |
+| `saga_start_checkout`   | order-service | orchestrator  | `{ idempotencyKey, order }` |
+| `command_reserve_stock` | orchestrator  | stock-service | `{ idempotencyKey, order }` |
 
 **Regra:** cada service chama `ensureTopicsExist([...])` no startup para criar tópicos automaticamente.
 
@@ -133,8 +133,8 @@ Cliente -> Gateway (POST /checkout)
 Cada service tem `src/_common/kafka.ts` e `src/_common/db.ts`. O kafka.ts é um thin wrapper de ~5 linhas sobre `@orchestrator/kafka`:
 
 ```ts
-import { createKafkaClient, type Producer } from "@orchestrator/kafka";
-const client = createKafkaClient("<service-name>");
+import { createKafkaClient, type Producer } from '@orchestrator/kafka';
+const client = createKafkaClient('<service-name>');
 export const ensureTopicsExist = client.ensureTopicsExist;
 export const getProducer: () => Promise<Producer> = client.getProducer;
 ```

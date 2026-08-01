@@ -1,4 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
+
+// oxlint-disable-next-line @typescript-eslint/consistent-type-imports -- NestJS DI requires value import
 import { CheckoutService } from './checkout.service';
 
 class CheckoutDto {

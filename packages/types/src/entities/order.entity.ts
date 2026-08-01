@@ -1,4 +1,4 @@
-import { OrderStatusType } from '@orchestrator/enums';
+import type { OrderStatusType } from '@orchestrator/enums';
 
 export type Order = {
   id: string;

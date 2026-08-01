@@ -1,0 +1,66 @@
+import { TOPICS } from '@orchestrator/constants';
+import type { EachMessagePayload } from 'kafkajs';
+
+import { createConsumer, withRetry, getProducer } from '../_common/kafka';
+
+export async function startPaymentWorker() {
+  const consumer = await createConsumer('payment-service-group');
+
+  await withRetry(
+    async () => {
+      await consumer.subscribe({ topic: TOPICS.COMMAND_PROCESS_PAYMENT, fromBeginning: false });
+    },
+    { label: 'Kafka payment consumer subscribe' },
+  );
+
+  await withRetry(
+    async () => {
+      await consumer.run({
+        eachMessage: async ({ message }: EachMessagePayload) => {
+          if (!message.value) return;
+
+          const payload = JSON.parse(message.value.toString());
+          console.log('[Payment Service] command_process_payment received:', payload);
+
+          const producer = await getProducer();
+          const idempotencyKey = payload.idempotencyKey;
+          const order = payload.order;
+
+          // Stub: 80% chance de sucesso
+          const success = Math.random() > 0.2;
+
+          if (success) {
+            await producer.send({
+              topic: TOPICS.REPLY_PAYMENT_SUCCESS,
+              messages: [{ value: JSON.stringify({ idempotencyKey, order }) }],
+            });
+
+            console.log(
+              '[Payment Service] Payment succeeded, published reply_payment_success:',
+              idempotencyKey,
+            );
+          } else {
+            await producer.send({
+              topic: TOPICS.REPLY_PAYMENT_FAIL,
+              messages: [
+                {
+                  value: JSON.stringify({
+                    idempotencyKey,
+                    order,
+                    reason: 'Payment declined (stub)',
+                  }),
+                },
+              ],
+            });
+
+            console.log(
+              '[Payment Service] Payment failed, published reply_payment_fail:',
+              idempotencyKey,
+            );
+          }
+        },
+      });
+    },
+    { label: 'Kafka payment consumer run' },
+  );
+}

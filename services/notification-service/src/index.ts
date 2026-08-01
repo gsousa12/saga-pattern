@@ -1,12 +1,12 @@
-import fastify from "fastify";
-import { DEFAULTS, PORTS } from "@orchestrator/constants";
+import { DEFAULTS, PORTS } from '@orchestrator/constants';
+import fastify from 'fastify';
 const app = fastify({ logger: true });
 
 const PORT = PORTS.NOTIFICATION_SERVICE;
-const HOST = "0.0.0.0";
+const HOST = '0.0.0.0';
 
-app.get("/health", async () => {
-  return { status: "ok" };
+app.get('/health', async () => {
+  return { status: 'ok' };
 });
 
 const start = async () => {
