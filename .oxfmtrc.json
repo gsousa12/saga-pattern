@@ -1,0 +1,23 @@
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "endOfLine": "lf",
+  "insertFinalNewline": true,
+  "bracketSpacing": true,
+  "objectWrap": "collapse",
+  "arrowParens": "always",
+  "sortImports": true,
+  "sortPackageJson": true,
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.drizzle/**",
+    "**/.cache/**",
+    "**/*.d.ts"
+  ]
+}

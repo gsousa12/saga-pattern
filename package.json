@@ -12,9 +12,17 @@
     "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service --filter stock-service --filter notification-service --filter orchestrator-service --filter gateway dev",
     "db:generate": "pnpm --filter @orchestrator/db db:generate",
     "db:migrate": "pnpm --filter @orchestrator/db db:migrate",
-    "db:studio": "pnpm --filter @orchestrator/db db:studio"
+    "db:studio": "pnpm --filter @orchestrator/db db:studio",
+    "prepare": "husky",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt . --check"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "oxfmt": "^0.61.0",
+    "oxlint": "^1.76.0",
     "typescript": "^5.9.3"
   }
 }

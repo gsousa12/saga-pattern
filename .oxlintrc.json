@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "node"],
+  "categories": { "correctness": "error", "suspicious": "warn", "perf": "warn" },
+  "rules": {
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-console": "warn",
+    "no-debugger": "error",
+    "no-empty-pattern": "error",
+    "no-empty-static-block": "error",
+    "no-empty": "error",
+    "no-self-compare": "error",
+    "no-case-declarations": "warn",
+    "no-unused-private-class-members": "warn",
+    "no-new-native-nonconstructor": "error",
+    "no-useless-concat": "warn",
+    "no-useless-escape": "warn",
+    "no-throw-literal": "error",
+    "require-yield": "error",
+    "valid-typeof": "error",
+    "unicorn/prefer-node-protocol": "warn",
+    "unicorn/prefer-number-properties": "warn",
+    "unicorn/no-abusive-eslint-disable": "error",
+    "@typescript-eslint/no-extraneous-class": ["warn", { "allowWithDecorator": true }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/consistent-type-imports": [
+      "warn",
+      { "prefer": "type-imports", "fixStyle": "separate-type-imports" }
+    ],
+    "@typescript-eslint/no-import-type-side-effects": "warn",
+    "import/first": "error",
+    "import/no-duplicates": "error",
+    "import/no-self-import": "error",
+    "node/no-exports-assign": "error"
+  },
+  "env": { "builtin": true, "node": true, "es2022": true },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.drizzle/**",
+    "**/.cache/**",
+    "**/*.d.ts"
+  ],
+  "options": { "denyWarnings": true, "reportUnusedDisableDirectives": "warn" },
+  "overrides": [
+    { "files": ["*.test.ts", "*.spec.ts", "**/__tests__/**"], "rules": { "no-console": "off" } },
+    { "files": ["*.worker.ts"], "rules": { "no-console": "off", "no-await-in-loop": "off" } },
+    {
+      "files": ["*.config.ts", "*.config.js", "*.config.mjs", "drizzle.config.*"],
+      "rules": { "no-console": "off", "@typescript-eslint/no-explicit-any": "off" }
+    }
+  ]
+}
