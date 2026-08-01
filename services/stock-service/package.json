@@ -8,10 +8,12 @@
   },
   "dependencies": {
     "fastify": "^4.28.0",
+    "@orchestrator/constants": "workspace:*",
     "@orchestrator/db": "workspace:*",
     "@orchestrator/enums": "workspace:*",
     "@orchestrator/kafka": "workspace:*",
-    "@orchestrator/types": "workspace:*"
+    "@orchestrator/types": "workspace:*",
+    "@orchestrator/utils": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

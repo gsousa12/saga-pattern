@@ -1,9 +1,13 @@
 import fastify from "fastify";
 import { z } from "zod";
+import { PORTS, TOPICS } from "@orchestrator/constants";
 import { startOrderWorker } from "./workers/order.worker";
 import { ensureTopicsExist, getProducer } from "./_common/kafka";
 import { getDbInstance } from "./_common/db";
 import { orders } from "@orchestrator/db";
+
+const PORT = PORTS.ORDER_SERVICE;
+const HOST = "0.0.0.0";
 
 const app = fastify({ logger: true });
 
@@ -38,7 +42,7 @@ app.post("/checkout", async (req, reply) => {
 
   const producer = await getProducer();
   await producer.send({
-    topic: "saga_start_checkout",
+    topic: TOPICS.SAGA_START_CHECKOUT,
     messages: [
       {
         value: JSON.stringify({
@@ -54,11 +58,9 @@ app.post("/checkout", async (req, reply) => {
 
 const start = async () => {
   try {
-    await ensureTopicsExist([
-      "saga_start_checkout",
-    ]);
+    await ensureTopicsExist([TOPICS.SAGA_START_CHECKOUT]);
     await startOrderWorker();
-    await app.listen({ port: 3001, host: "0.0.0.0" });
+    await app.listen({ port: PORT, host: HOST });
   } catch (err) {
     app.log.error(err);
     process.exit(1);

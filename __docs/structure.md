@@ -121,8 +121,6 @@ Cliente -> Gateway (POST /checkout)
 
 | Topico                  | Produtor              | Consumidor     | Payload                               |
 | ----------------------- | --------------------- | -------------- | ------------------------------------- |
-| `orders.create`         | orchestrator (LEGADO) | order-service  | `{ productId, quantity, totalPrice }` |
-| `orders.created`        | order-service         | (nenhum ativo) | Order object                          |
 | `saga_start_checkout`   | order-service         | orchestrator   | `{ idempotencyKey, order }`           |
 | `command_reserve_stock` | orchestrator          | stock-service  | `{ idempotencyKey, order }`           |
 

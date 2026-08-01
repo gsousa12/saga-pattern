@@ -7,10 +7,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@orchestrator/constants": "workspace:*",
     "@orchestrator/db": "workspace:*",
     "@orchestrator/enums": "workspace:*",
     "@orchestrator/kafka": "workspace:*",
     "@orchestrator/types": "workspace:*",
+    "@orchestrator/utils": "workspace:*",
     "fastify": "^4.28.0",
     "zod": "^4.4.3"
   },
