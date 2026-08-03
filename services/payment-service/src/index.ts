@@ -1,4 +1,4 @@
-import { DEFAULTS, PORTS, TOPICS } from '@orchestrator/constants';
+import { PORTS, TOPICS } from '@orchestrator/constants';
 import fastify from 'fastify';
 
 import { ensureTopicsExist } from './_common/kafka';
@@ -22,7 +22,6 @@ const start = async () => {
     ]);
     await startPaymentWorker();
     await app.listen({ port: PORT, host: HOST });
-    app.log.info(`Defaults loaded: ${DEFAULTS.DATABASE_URL}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

@@ -5,9 +5,10 @@ import {
   ReplyPaymentSuccessPayloadSchema,
   ReplyPaymentFailPayloadSchema,
 } from '@orchestrator/schemas';
+import { simulateError } from '@orchestrator/utils';
 import type { EachMessagePayload } from 'kafkajs';
 
-import { createConsumer, withRetry, getProducer } from '../_common/kafka';
+import { createConsumer, getProducer, withRetry } from '../_common';
 
 export async function startPaymentWorker() {
   const consumer = await createConsumer('payment-service-group');
@@ -32,10 +33,12 @@ export async function startPaymentWorker() {
           const idempotencyKey = payload.idempotencyKey;
           const order = payload.order;
 
-          // Stub: 80% chance de sucesso
-          const success = Math.random() > 0.2;
+          /**
+           * Simulate a payment process with a 80% chance of success and 20% chance of failure.
+           */
+          const paymentProcessError = simulateError(80);
 
-          if (success) {
+          if (paymentProcessError) {
             await producer.send({
               topic: TOPICS.REPLY_PAYMENT_SUCCESS,
               messages: [
@@ -46,32 +49,32 @@ export async function startPaymentWorker() {
                 },
               ],
             });
-
             console.log(
               '[Payment Service] Payment succeeded, published reply_payment_success:',
               idempotencyKey,
             );
-          } else {
-            await producer.send({
-              topic: TOPICS.REPLY_PAYMENT_FAIL,
-              messages: [
-                {
-                  value: JSON.stringify(
-                    ReplyPaymentFailPayloadSchema.parse({
-                      idempotencyKey,
-                      order,
-                      reason: 'Payment declined (stub)',
-                    }),
-                  ),
-                },
-              ],
-            });
-
-            console.log(
-              '[Payment Service] Payment failed, published reply_payment_fail:',
-              idempotencyKey,
-            );
+            return;
           }
+
+          await producer.send({
+            topic: TOPICS.REPLY_PAYMENT_FAIL,
+            messages: [
+              {
+                value: JSON.stringify(
+                  ReplyPaymentFailPayloadSchema.parse({
+                    idempotencyKey,
+                    order,
+                    reason: 'Payment declined (stub)',
+                  }),
+                ),
+              },
+            ],
+          });
+
+          console.log(
+            '[Payment Service] Payment failed, published reply_payment_fail:',
+            idempotencyKey,
+          );
         },
       });
     },

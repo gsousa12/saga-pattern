@@ -14,8 +14,7 @@ import {
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
-import { getDbInstance } from '../_common/db';
-import { createConsumer, getProducer, withRetry } from '../_common/kafka';
+import { createConsumer, getDbInstance, getProducer, withRetry } from '../_common';
 
 // --- Worker 1: Consome saga_start_checkout e inicia a saga ---
 export async function startSagaWorker() {
@@ -58,6 +57,7 @@ export async function startSagaWorker() {
 
           // Publica comando para reservar stock
           const producer = await getProducer();
+
           await producer.send({
             topic: TOPICS.COMMAND_RESERVE_STOCK,
             messages: [

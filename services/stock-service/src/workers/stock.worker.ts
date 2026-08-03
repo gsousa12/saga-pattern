@@ -9,8 +9,7 @@ import {
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
-import { getDbInstance } from '../_common/db';
-import { getProducer, createConsumer, withRetry } from '../_common/kafka';
+import { createConsumer, getDbInstance, getProducer, withRetry } from '../_common';
 
 export async function startStockWorker() {
   const consumer = await createConsumer('stock-service-group');
@@ -63,8 +62,8 @@ export async function startStockWorker() {
             return;
           }
 
-          // Se não tem quantidade disponível suficiente
-          if (stockRecord.availableQuantity < order.quantity) {
+          const hasSufficientStock = stockRecord.availableQuantity >= order.quantity;
+          if (!hasSufficientStock) {
             console.log(
               `[Stock Service] Insufficient stock for product ${order.productId}: ` +
                 `available=${stockRecord.availableQuantity}, requested=${order.quantity}`,

@@ -1,7 +1,7 @@
 import { PORTS, TOPICS } from '@orchestrator/constants';
 import fastify from 'fastify';
 
-import { ensureTopicsExist } from './_common/kafka';
+import { ensureTopicsExist } from './_common';
 import {
   startSagaWorker,
   startStockSuccessWorker,

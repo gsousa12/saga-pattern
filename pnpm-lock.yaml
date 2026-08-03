@@ -252,6 +252,9 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.43
+      drizzle-orm:
+        specifier: ^0.33.0
+        version: 0.33.0(@types/pg@8.20.0)(pg@8.22.0)
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4

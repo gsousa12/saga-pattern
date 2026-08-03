@@ -1,6 +1,7 @@
 import { TOPICS } from '@orchestrator/constants';
-import { orders } from '@orchestrator/db';
+import { orders, products } from '@orchestrator/db';
 import { CheckoutBodySchema } from '@orchestrator/schemas';
+import { eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { getDbInstance, getProducer } from '../_common';
@@ -9,10 +10,15 @@ export async function checkout(req: FastifyRequest, reply: FastifyReply) {
   const body = CheckoutBodySchema.parse(req.body);
   const db = await getDbInstance();
 
-  // buscar o preco do produto - por enquanto mock
-  const totalPrice = body.quantity * 100; // mock price
-
   const order = await db.transaction(async (tx) => {
+    const [product] = await tx.select().from(products).where(eq(products.id, body.productId));
+
+    if (!product) {
+      throw new Error(`Product not found: ${body.productId}`);
+    }
+
+    const totalPrice = body.quantity * product.price;
+
     const [result] = await tx
       .insert(orders)
       .values({ productId: body.productId, quantity: body.quantity, totalPrice })
