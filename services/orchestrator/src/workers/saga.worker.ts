@@ -1,6 +1,16 @@
 import { TOPICS } from '@orchestrator/constants';
 import { sagaStates } from '@orchestrator/db';
 import { SagaStepEnum } from '@orchestrator/enums';
+import {
+  parseKafkaMessage,
+  SagaStartCheckoutPayloadSchema,
+  ReplyStockReservedSuccessPayloadSchema,
+  ReplyStockReservedFailPayloadSchema,
+  ReplyPaymentSuccessPayloadSchema,
+  ReplyPaymentFailPayloadSchema,
+  CommandReserveStockPayloadSchema,
+  CommandProcessPaymentPayloadSchema,
+} from '@orchestrator/schemas';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -24,7 +34,7 @@ export async function startSagaWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, SagaStartCheckoutPayloadSchema);
           console.log('SAGA_START_CHECKOUT payload', payload);
 
           const db = await getDbInstance();
@@ -52,10 +62,12 @@ export async function startSagaWorker() {
             topic: TOPICS.COMMAND_RESERVE_STOCK,
             messages: [
               {
-                value: JSON.stringify({
-                  idempotencyKey: payload.idempotencyKey,
-                  order: payload.order,
-                }),
+                value: JSON.stringify(
+                  CommandReserveStockPayloadSchema.parse({
+                    idempotencyKey: payload.idempotencyKey,
+                    order: payload.order,
+                  }),
+                ),
               },
             ],
           });
@@ -88,7 +100,7 @@ export async function startStockSuccessWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, ReplyStockReservedSuccessPayloadSchema);
           const db = await getDbInstance();
           const producer = await getProducer();
 
@@ -109,10 +121,12 @@ export async function startStockSuccessWorker() {
             topic: TOPICS.COMMAND_PROCESS_PAYMENT,
             messages: [
               {
-                value: JSON.stringify({
-                  idempotencyKey: payload.idempotencyKey,
-                  order: payload.order,
-                }),
+                value: JSON.stringify(
+                  CommandProcessPaymentPayloadSchema.parse({
+                    idempotencyKey: payload.idempotencyKey,
+                    order: payload.order,
+                  }),
+                ),
               },
             ],
           });
@@ -142,7 +156,7 @@ export async function startStockFailWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, ReplyStockReservedFailPayloadSchema);
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {
@@ -182,7 +196,7 @@ export async function startPaymentSuccessWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, ReplyPaymentSuccessPayloadSchema);
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {
@@ -220,7 +234,7 @@ export async function startPaymentFailWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, ReplyPaymentFailPayloadSchema);
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {

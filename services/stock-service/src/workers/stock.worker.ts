@@ -1,5 +1,11 @@
 import { TOPICS } from '@orchestrator/constants';
 import { stock } from '@orchestrator/db';
+import {
+  parseKafkaMessage,
+  CommandReserveStockPayloadSchema,
+  ReplyStockReservedSuccessPayloadSchema,
+  ReplyStockReservedFailPayloadSchema,
+} from '@orchestrator/schemas';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -22,7 +28,7 @@ export async function startStockWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, CommandReserveStockPayloadSchema);
           console.log('[Stock Service] command_reserve_stock received:', payload);
 
           const db = await getDbInstance();
@@ -43,7 +49,15 @@ export async function startStockWorker() {
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
-                { value: JSON.stringify({ idempotencyKey, order, reason: 'Stock not found' }) },
+                {
+                  value: JSON.stringify(
+                    ReplyStockReservedFailPayloadSchema.parse({
+                      idempotencyKey,
+                      order,
+                      reason: 'Stock not found',
+                    }),
+                  ),
+                },
               ],
             });
             return;
@@ -58,7 +72,15 @@ export async function startStockWorker() {
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
-                { value: JSON.stringify({ idempotencyKey, order, reason: 'Insufficient stock' }) },
+                {
+                  value: JSON.stringify(
+                    ReplyStockReservedFailPayloadSchema.parse({
+                      idempotencyKey,
+                      order,
+                      reason: 'Insufficient stock',
+                    }),
+                  ),
+                },
               ],
             });
             return;
@@ -76,7 +98,13 @@ export async function startStockWorker() {
             topic: TOPICS.REPLY_STOCK_RESERVED_SUCCESS,
             messages: [
               {
-                value: JSON.stringify({ idempotencyKey, order, reservedQuantity: order.quantity }),
+                value: JSON.stringify(
+                  ReplyStockReservedSuccessPayloadSchema.parse({
+                    idempotencyKey,
+                    order,
+                    reservedQuantity: order.quantity,
+                  }),
+                ),
               },
             ],
           });

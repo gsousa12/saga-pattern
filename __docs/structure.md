@@ -11,6 +11,7 @@ orchestrator/
 ├── packages/                 # Codigo compartilhado (sem logica de negocio)
 │   ├── db/                   # Drizzle ORM: schemas, conexao, migrations
 │   ├── kafka/                # KafkaJS: factory + retry + re-export de tipos
+│   ├── schemas/              # Zod: schemas de validacao + types inferidos (DTOs, Kafka payloads)
 │   ├── enums/                # Constantes e enums puros
 │   ├── constants/            # Constantes globais: PORTS, TOPICS, DEFAULTS
 │   └── types/                # Tipagens TypeScript puras (LEGADO, nao usado no fluxo atual)
@@ -47,6 +48,15 @@ orchestrator/
 - **Re-exporta tipos:** `Producer`, `Consumer` (de `kafkajs`) para evitar `TS2742`
 - **Regra:** cada service cria um thin wrapper `src/_common/kafka.ts` que chama `createKafkaClient("<service-name>")`
 
+### `@orchestrator/schemas`
+
+- **Domain models:** `OrderSchema` / `Order`, `ProductSchema` / `Product`, `StockSchema` / `Stock`
+- **HTTP DTOs:** `CheckoutBodySchema` / `CheckoutBody`, `CreateOrderBodySchema` / `CreateOrderBody`, `CreateProductBodySchema` / `CreateProductBody`
+- **Kafka payloads:** `SagaStartCheckoutPayloadSchema`, `CommandReserveStockPayloadSchema`, `ReplyStockReservedSuccessPayloadSchema`, `ReplyStockReservedFailPayloadSchema`, `CommandProcessPaymentPayloadSchema`, `ReplyPaymentSuccessPayloadSchema`, `ReplyPaymentFailPayloadSchema`, `CommandReleaseStockPayloadSchema`
+- **Helper:** `parseKafkaMessage(messageValue, schema)` — parse seguro de mensagens Kafka com validacao Zod
+- **Regra:** todo service/app que valida entrada (HTTP body ou Kafka message) importa `@orchestrator/schemas`. Nenhum schema ou DTO fica dentro de `services/` ou `apps/`.
+- **Regra (enums):** schemas que referenciam enum values devem importar os arrays `*_VALUES` de `@orchestrator/enums` (ex: `z.enum(ORDER_STATUS_VALUES)`). Nunca hardcodar strings de enum dentro de schemas.
+
 ### `@orchestrator/enums`
 
 - `OrderStatusEnum` / `OrderStatusType` — `pending`, `completed`, `cancelled`
@@ -77,9 +87,9 @@ Todos os services sao **workers** — rodam Fastify na porta X apenas para healt
 ### order-service (porta 3003)
 
 - **Endpoint HTTP:** `POST /checkout` (recebe do gateway)
-- **Body:** `{ idempotencyKey, productId, quantity }`
+- **Body:** validado por `CheckoutBodySchema` do `@orchestrator/schemas`
 - **Acoes:** cria order no DB via **transaction**, publica `saga_start_checkout` com `{ idempotencyKey, order }`
-- **Arquivos:** `src/index.ts`, `src/_common/db.ts`, `src/_common/kafka.ts`
+- **Arquivos:** `src/index.ts`, `src/controller/orders.controller.ts`, `src/_common/db.ts`, `src/_common/kafka.ts`
 
 ### stock-service (porta 3004)
 
@@ -107,6 +117,7 @@ Todos os services sao **workers** — rodam Fastify na porta X apenas para healt
   - `GET /products`, `POST /products` (stub)
   - `GET /orders`, `POST /orders` (stub)
   - `POST /checkout` → chama `order-service:3003/checkout` via **axios**
+- **DTOs:** todos os DTOs vem de `@orchestrator/schemas` (ex: `CheckoutBody`, `CreateOrderBody`, `CreateProductBody`)
 - **Modules:** `AppModule` importa `CheckoutModule` (controller + service)
 - **Env:** `ORDER_SERVICE_URL` (default `http://localhost:3003`)
 
@@ -167,7 +178,7 @@ Payment Service -> reply_payment_fail { idempotencyKey, order, reason }
 | `reply_payment_success`        | payment-service | orchestrator    | `{ idempotencyKey, order }`         |
 | `reply_payment_fail`           | payment-service | orchestrator    | `{ idempotencyKey, order, reason }` |
 
-**Regra:** cada service chama `ensureTopicsExist([...])` no startup para criar tópicos automaticamente.
+**Regra:** cada service chama `ensureTopicsExist([...])` no startup para criar tópicos automaticamente. Todo payload Kafka é validado via `parseKafkaMessage` usando o schema correspondente de `@orchestrator/schemas`.
 
 ## Conventions de Código
 
@@ -180,6 +191,16 @@ import { createKafkaClient, type Producer } from '@orchestrator/kafka';
 const client = createKafkaClient('<service-name>');
 export const ensureTopicsExist = client.ensureTopicsExist;
 export const getProducer: () => Promise<Producer> = client.getProducer;
+```
+
+### Parse de Mensagens Kafka
+
+Nunca use `JSON.parse` solto. Sempre valide com Zod via `@orchestrator/schemas`:
+
+```ts
+import { parseKafkaMessage, SagaStartCheckoutPayloadSchema } from '@orchestrator/schemas';
+
+const payload = parseKafkaMessage(message.value, SagaStartCheckoutPayloadSchema);
 ```
 
 ### tsconfig dos Services
@@ -263,10 +284,11 @@ Use com VS Code REST Client ou JetBrains.
 
 ## Checklist para Modificacoes Futuras
 
+- [ ] Novo schema/DTO? → adicionar em `packages/schemas/src/`, exportar em `packages/schemas/src/index.ts`, usar `z.infer<typeof XSchema>` para o type
+- [ ] Alterou enums? → rebuild `@orchestrator/enums` → depois rebuild `@orchestrator/schemas` (depende de enums) → depois rebuild `@orchestrator/db`
 - [ ] Alterou schema? → `pnpm db:generate` (ou manual SQL) + `pnpm db:migrate` + rebuild `@orchestrator/db`
-- [ ] Alterou enums? → rebuild `@orchestrator/enums` antes de rebuildar `@orchestrator/db`
 - [ ] Alterou ports? → atualizar `packages/constants/src/index.ts` + `__docs/structure.md` + `docker-compose.yml` se necessario
-- [ ] Novo service com Kafka? → thin wrapper `src/_common/kafka.ts`, chamar `ensureTopicsExist([...])` no startup
+- [ ] Novo service com Kafka? → thin wrapper `src/_common/kafka.ts`, chamar `ensureTopicsExist([...])` no startup, usar `parseKafkaMessage` do `@orchestrator/schemas`
 - [ ] Novo service com DB? → thin wrapper `src/_common/db.ts`, usar `db.transaction()` em inserts/updates
-- [ ] Novo topico Kafka? → adicionar em `packages/constants/src/index.ts` (TOPICS) + atualizar `__docs/structure.md`
+- [ ] Novo topico Kafka? → adicionar em `packages/constants/src/index.ts` (TOPICS) + `packages/schemas/src/kafka/` (payload) + atualizar `__docs/structure.md`
 - [ ] Adicionou workspace? → incluir em `pnpm-workspace.yaml` e `package.json` root scripts

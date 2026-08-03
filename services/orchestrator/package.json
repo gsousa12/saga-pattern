@@ -11,10 +11,10 @@
     "@orchestrator/db": "workspace:*",
     "@orchestrator/enums": "workspace:*",
     "@orchestrator/kafka": "workspace:*",
+    "@orchestrator/schemas": "workspace:*",
     "@orchestrator/types": "workspace:*",
     "@orchestrator/utils": "workspace:*",
-    "fastify": "^4.28.0",
-    "zod": "^4.4.3"
+    "fastify": "^4.28.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

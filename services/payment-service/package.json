@@ -9,6 +9,7 @@
   "dependencies": {
     "@orchestrator/constants": "workspace:*",
     "@orchestrator/kafka": "workspace:*",
+    "@orchestrator/schemas": "workspace:*",
     "@orchestrator/types": "workspace:*",
     "@orchestrator/utils": "workspace:*",
     "fastify": "^4.28.0"

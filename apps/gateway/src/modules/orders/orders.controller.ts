@@ -1,10 +1,5 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
-
-class CreateOrderDto {
-  productId!: string;
-  quantity!: number;
-  totalPrice!: number;
-}
+import type { CreateOrderBody } from '@orchestrator/schemas';
 
 @Controller('orders')
 export class OrdersController {
@@ -14,7 +9,7 @@ export class OrdersController {
   }
 
   @Post()
-  create(@Body() body: CreateOrderDto) {
+  create(@Body() body: CreateOrderBody) {
     return { message: 'Order creation queued', data: body };
   }
 }

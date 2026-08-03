@@ -1,4 +1,10 @@
 import { TOPICS } from '@orchestrator/constants';
+import {
+  parseKafkaMessage,
+  CommandProcessPaymentPayloadSchema,
+  ReplyPaymentSuccessPayloadSchema,
+  ReplyPaymentFailPayloadSchema,
+} from '@orchestrator/schemas';
 import type { EachMessagePayload } from 'kafkajs';
 
 import { createConsumer, withRetry, getProducer } from '../_common/kafka';
@@ -19,7 +25,7 @@ export async function startPaymentWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = JSON.parse(message.value.toString());
+          const payload = parseKafkaMessage(message.value, CommandProcessPaymentPayloadSchema);
           console.log('[Payment Service] command_process_payment received:', payload);
 
           const producer = await getProducer();
@@ -32,7 +38,13 @@ export async function startPaymentWorker() {
           if (success) {
             await producer.send({
               topic: TOPICS.REPLY_PAYMENT_SUCCESS,
-              messages: [{ value: JSON.stringify({ idempotencyKey, order }) }],
+              messages: [
+                {
+                  value: JSON.stringify(
+                    ReplyPaymentSuccessPayloadSchema.parse({ idempotencyKey, order }),
+                  ),
+                },
+              ],
             });
 
             console.log(
@@ -44,11 +56,13 @@ export async function startPaymentWorker() {
               topic: TOPICS.REPLY_PAYMENT_FAIL,
               messages: [
                 {
-                  value: JSON.stringify({
-                    idempotencyKey,
-                    order,
-                    reason: 'Payment declined (stub)',
-                  }),
+                  value: JSON.stringify(
+                    ReplyPaymentFailPayloadSchema.parse({
+                      idempotencyKey,
+                      order,
+                      reason: 'Payment declined (stub)',
+                    }),
+                  ),
                 },
               ],
             });
