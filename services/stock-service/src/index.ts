@@ -2,7 +2,7 @@ import { PORTS, TOPICS } from '@orchestrator/constants';
 import fastify from 'fastify';
 
 import { ensureTopicsExist } from './_common/kafka';
-import { startStockWorker } from './workers/stock.worker';
+import { startStockWorker } from './workers';
 
 const PORT = PORTS.STOCK_SERVICE;
 const HOST = '0.0.0.0';

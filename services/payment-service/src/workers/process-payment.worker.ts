@@ -10,6 +10,10 @@ import type { EachMessagePayload } from 'kafkajs';
 
 import { createConsumer, getProducer, withRetry } from '../_common';
 
+/**
+ * Listens to the command_process_payment topic and simulates a payment attempt.
+ * With an 80% chance of success, publishes a success reply; otherwise publishes a failure reply.
+ */
 export async function startPaymentWorker() {
   const consumer = await createConsumer('payment-service-group');
 
@@ -27,15 +31,11 @@ export async function startPaymentWorker() {
           if (!message.value) return;
 
           const payload = parseKafkaMessage(message.value, CommandProcessPaymentPayloadSchema);
-          console.log('[Payment Service] command_process_payment received:', payload);
 
           const producer = await getProducer();
           const idempotencyKey = payload.idempotencyKey;
           const order = payload.order;
 
-          /**
-           * Simulate a payment process with a 80% chance of success and 20% chance of failure.
-           */
           const paymentProcessError = simulateError(80);
 
           if (paymentProcessError) {
@@ -49,10 +49,6 @@ export async function startPaymentWorker() {
                 },
               ],
             });
-            console.log(
-              '[Payment Service] Payment succeeded, published reply_payment_success:',
-              idempotencyKey,
-            );
             return;
           }
 
@@ -70,11 +66,6 @@ export async function startPaymentWorker() {
               },
             ],
           });
-
-          console.log(
-            '[Payment Service] Payment failed, published reply_payment_fail:',
-            idempotencyKey,
-          );
         },
       });
     },

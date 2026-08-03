@@ -8,7 +8,7 @@ import {
   startStockFailWorker,
   startPaymentSuccessWorker,
   startPaymentFailWorker,
-} from './workers/saga.worker';
+} from './workers';
 
 const PORT = PORTS.ORCHESTRATOR;
 const HOST = '0.0.0.0';

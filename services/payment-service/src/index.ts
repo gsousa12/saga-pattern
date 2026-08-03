@@ -2,7 +2,7 @@ import { PORTS, TOPICS } from '@orchestrator/constants';
 import fastify from 'fastify';
 
 import { ensureTopicsExist } from './_common/kafka';
-import { startPaymentWorker } from './workers/payment.worker';
+import { startPaymentWorker } from './workers';
 
 const PORT = PORTS.PAYMENT_SERVICE;
 const HOST = '0.0.0.0';

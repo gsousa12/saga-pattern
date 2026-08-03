@@ -11,6 +11,11 @@ import type { EachMessagePayload } from 'kafkajs';
 
 import { createConsumer, getDbInstance, getProducer, withRetry } from '../_common';
 
+/**
+ * Listens to the command_reserve_stock topic and attempts to reserve stock for an order.
+ * Validates available quantity, updates the stock record within a transaction,
+ * and publishes either a success or failure reply to the orchestrator.
+ */
 export async function startStockWorker() {
   const consumer = await createConsumer('stock-service-group');
 
@@ -28,7 +33,6 @@ export async function startStockWorker() {
           if (!message.value) return;
 
           const payload = parseKafkaMessage(message.value, CommandReserveStockPayloadSchema);
-          console.log('[Stock Service] command_reserve_stock received:', payload);
 
           const db = await getDbInstance();
           const producer = await getProducer();
@@ -36,15 +40,12 @@ export async function startStockWorker() {
           const order = payload.order;
           const idempotencyKey = payload.idempotencyKey;
 
-          // Busca o estoque pelo productId
           const [stockRecord] = await db
             .select()
             .from(stock)
             .where(eq(stock.productId, order.productId));
 
-          // Se não encontrou stock para o produto
           if (!stockRecord) {
-            console.log(`[Stock Service] Stock not found for product ${order.productId}`);
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
@@ -64,10 +65,6 @@ export async function startStockWorker() {
 
           const hasSufficientStock = stockRecord.availableQuantity >= order.quantity;
           if (!hasSufficientStock) {
-            console.log(
-              `[Stock Service] Insufficient stock for product ${order.productId}: ` +
-                `available=${stockRecord.availableQuantity}, requested=${order.quantity}`,
-            );
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
@@ -85,7 +82,6 @@ export async function startStockWorker() {
             return;
           }
 
-          // Tem estoque disponível: atualiza dentro de transaction e publica sucesso
           await db.transaction(async (tx) => {
             await tx
               .update(stock)
@@ -107,11 +103,6 @@ export async function startStockWorker() {
               },
             ],
           });
-
-          console.log(
-            `[Stock Service] Stock reserved for product ${order.productId}: ` +
-              `reserved=${order.quantity}`,
-          );
         },
       });
     },
