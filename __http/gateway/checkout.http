@@ -1,5 +1,5 @@
 ### Checkout
-POST http://localhost:3002/checkout
+POST http://localhost:3001/checkout
 Content-Type: application/json
 
 {

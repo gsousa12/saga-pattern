@@ -25,6 +25,8 @@ export async function startSagaWorker() {
           if (!message.value) return;
 
           const payload = JSON.parse(message.value.toString());
+          console.log('SAGA_START_CHECKOUT payload', payload);
+
           const db = await getDbInstance();
 
           // Cria o registro de saga state
@@ -39,10 +41,10 @@ export async function startSagaWorker() {
               });
           });
 
-          console.log(
-            '[Orchestrator] saga_start_checkout received, saga_state created:',
-            payload.idempotencyKey,
-          );
+          // console.log(
+          //   '[Orchestrator] saga_start_checkout received, saga_state created:',
+          //   payload.idempotencyKey,
+          // );
 
           // Publica comando para reservar stock
           const producer = await getProducer();
@@ -58,7 +60,7 @@ export async function startSagaWorker() {
             ],
           });
 
-          console.log('[Orchestrator] command_reserve_stock published:', payload.idempotencyKey);
+          // console.log('[Orchestrator] command_reserve_stock published:', payload.idempotencyKey);
         },
       });
     },

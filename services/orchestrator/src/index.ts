@@ -15,10 +15,6 @@ const HOST = '0.0.0.0';
 
 const app = fastify({ logger: true });
 
-app.get('/health', async () => {
-  return { status: 'ok' };
-});
-
 const start = async () => {
   try {
     await ensureTopicsExist([
