@@ -1,6 +1,7 @@
 import { DEFAULTS, PORTS } from '@orchestrator/constants';
 import fastify from 'fastify';
-const app = fastify({ logger: true });
+
+const app = fastify({ logger: false });
 
 const PORT = PORTS.NOTIFICATION_SERVICE;
 const HOST = '0.0.0.0';

@@ -7,7 +7,7 @@ import { orderRouter } from './router/router';
 const PORT = PORTS.ORDER_SERVICE;
 const HOST = '0.0.0.0';
 
-const app = fastify({ logger: true });
+const app = fastify({ logger: false });
 
 app.get('/health', async () => {
   return { status: 'ok' };

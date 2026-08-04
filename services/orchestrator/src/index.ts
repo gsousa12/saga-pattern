@@ -13,7 +13,7 @@ import {
 const PORT = PORTS.ORCHESTRATOR;
 const HOST = '0.0.0.0';
 
-const app = fastify({ logger: true });
+const app = fastify({ logger: false });
 
 const start = async () => {
   try {
