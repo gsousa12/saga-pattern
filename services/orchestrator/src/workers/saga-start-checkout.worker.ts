@@ -2,7 +2,8 @@ import { TOPICS } from '@orchestrator/constants';
 import { sagaStates } from '@orchestrator/db';
 import { SagaStepEnum } from '@orchestrator/enums';
 import {
-  parseKafkaMessage,
+  parseKafkaEnvelope,
+  buildKafkaMessage,
   SagaStartCheckoutPayloadSchema,
   CommandReserveStockPayloadSchema,
 } from '@orchestrator/schemas';
@@ -30,7 +31,7 @@ export async function startSagaWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = parseKafkaMessage(message.value, SagaStartCheckoutPayloadSchema);
+          const { payload } = parseKafkaEnvelope(message.value, SagaStartCheckoutPayloadSchema);
 
           const db = await getDbInstance();
 
@@ -51,11 +52,17 @@ export async function startSagaWorker() {
             topic: TOPICS.COMMAND_RESERVE_STOCK,
             messages: [
               {
-                value: JSON.stringify(
+                value: buildKafkaMessage(
                   CommandReserveStockPayloadSchema.parse({
                     idempotencyKey: payload.idempotencyKey,
                     order: payload.order,
                   }),
+                  {
+                    action: 'Saga started - command reserve stock',
+                    service: 'orchestrator',
+                    topic: TOPICS.COMMAND_RESERVE_STOCK,
+                    idempotencyKey: payload.idempotencyKey,
+                  },
                 ),
               },
             ],

@@ -12,6 +12,9 @@ export const TOPICS = {
   COMMAND_PROCESS_PAYMENT: 'command_process_payment',
   REPLY_PAYMENT_SUCCESS: 'reply_payment_success',
   REPLY_PAYMENT_FAIL: 'reply_payment_fail',
+  COMMAND_RELEASE_STOCK: 'command_release_stock',
+  REPLY_STOCK_RELEASED_SUCCESS: 'reply_stock_released_success',
+  SAGA_ORDER_STATUS_UPDATED: 'saga_order_status_updated',
 } as const;
 
 export const DEFAULTS = {

@@ -8,6 +8,7 @@ import {
   startStockFailWorker,
   startPaymentSuccessWorker,
   startPaymentFailWorker,
+  startReleaseSuccessWorker,
 } from './workers';
 
 const PORT = PORTS.ORCHESTRATOR;
@@ -25,6 +26,9 @@ const start = async () => {
       TOPICS.COMMAND_PROCESS_PAYMENT,
       TOPICS.REPLY_PAYMENT_SUCCESS,
       TOPICS.REPLY_PAYMENT_FAIL,
+      TOPICS.COMMAND_RELEASE_STOCK,
+      TOPICS.REPLY_STOCK_RELEASED_SUCCESS,
+      TOPICS.SAGA_ORDER_STATUS_UPDATED,
     ]);
 
     await startSagaWorker();
@@ -32,6 +36,7 @@ const start = async () => {
     await startStockFailWorker();
     await startPaymentSuccessWorker();
     await startPaymentFailWorker();
+    await startReleaseSuccessWorker();
 
     await app.listen({ port: PORT, host: HOST });
   } catch (err) {

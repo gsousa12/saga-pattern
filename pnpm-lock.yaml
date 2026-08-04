@@ -233,6 +233,9 @@ importers:
       '@orchestrator/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@orchestrator/enums':
+        specifier: workspace:*
+        version: link:../../packages/enums
       '@orchestrator/kafka':
         specifier: workspace:*
         version: link:../../packages/kafka

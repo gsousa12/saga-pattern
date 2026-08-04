@@ -7,9 +7,24 @@ export const OrderSchema = z.object({
   quantity: z.number().int().positive(),
   totalPrice: z.number().positive(),
   status: z.enum(ORDER_STATUS_VALUES),
-  createdAt: z.string().datetime().optional(),
-  updatedAt: z.string().datetime().optional(),
-  deletedAt: z.string().datetime().nullable().optional(),
+  createdAt: z
+    .preprocess(
+      (val) => (val instanceof Date ? val.toISOString() : val),
+      z.string().datetime().optional(),
+    )
+    .optional(),
+  updatedAt: z
+    .preprocess(
+      (val) => (val instanceof Date ? val.toISOString() : val),
+      z.string().datetime().optional(),
+    )
+    .optional(),
+  deletedAt: z
+    .preprocess(
+      (val) => (val instanceof Date ? val.toISOString() : val),
+      z.string().datetime().nullable().optional(),
+    )
+    .optional(),
 });
 
 export type Order = z.infer<typeof OrderSchema>;

@@ -1,11 +1,16 @@
 import { TOPICS } from '@orchestrator/constants';
 import { sagaStates } from '@orchestrator/db';
 import { SagaStepEnum } from '@orchestrator/enums';
-import { parseKafkaMessage, ReplyPaymentFailPayloadSchema } from '@orchestrator/schemas';
+import {
+  parseKafkaEnvelope,
+  buildKafkaMessage,
+  CommandReleaseStockPayloadSchema,
+  ReplyPaymentFailPayloadSchema,
+} from '@orchestrator/schemas';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
-import { createConsumer, getDbInstance, withRetry } from '../_common';
+import { createConsumer, getDbInstance, getProducer, withRetry } from '../_common';
 
 /**
  * Listens to the reply_payment_fail topic and initiates a rollback.
@@ -27,7 +32,7 @@ export async function startPaymentFailWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = parseKafkaMessage(message.value, ReplyPaymentFailPayloadSchema);
+          const { payload } = parseKafkaEnvelope(message.value, ReplyPaymentFailPayloadSchema);
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {
@@ -37,7 +42,27 @@ export async function startPaymentFailWorker() {
               .where(eq(sagaStates.idempotencyKey, payload.idempotencyKey));
           });
 
-          // TODO: publicar command_release_stock para o stock service fazer rollback
+          const producer = await getProducer();
+
+          await producer.send({
+            topic: TOPICS.COMMAND_RELEASE_STOCK,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  CommandReleaseStockPayloadSchema.parse({
+                    idempotencyKey: payload.idempotencyKey,
+                    order: payload.order,
+                  }),
+                  {
+                    action: 'Payment failed - command release stock rollback',
+                    service: 'orchestrator',
+                    topic: TOPICS.COMMAND_RELEASE_STOCK,
+                    idempotencyKey: payload.idempotencyKey,
+                  },
+                ),
+              },
+            ],
+          });
         },
       });
     },

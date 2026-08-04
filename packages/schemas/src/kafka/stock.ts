@@ -33,3 +33,20 @@ export const CommandReleaseStockPayloadSchema = z.object({
 });
 
 export type CommandReleaseStockPayload = z.infer<typeof CommandReleaseStockPayloadSchema>;
+
+export const ReplyStockReleasedSuccessPayloadSchema = z.object({
+  idempotencyKey: z.string().min(1),
+  order: OrderSchema,
+});
+
+export type ReplyStockReleasedSuccessPayload = z.infer<
+  typeof ReplyStockReleasedSuccessPayloadSchema
+>;
+
+export const ReplyStockReleasedFailPayloadSchema = z.object({
+  idempotencyKey: z.string().min(1),
+  order: OrderSchema,
+  reason: z.string().min(1),
+});
+
+export type ReplyStockReleasedFailPayload = z.infer<typeof ReplyStockReleasedFailPayloadSchema>;
