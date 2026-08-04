@@ -64,6 +64,7 @@ orchestrator/
   ```
 - **Early return:** Use sempre early return quando possível para evitar nesting desnecessário.
 - **JSDocs:** Funções e constantes importantes para a regra de negócio sempre devem ter JSDocs simples porém explicativos.
+- **Overengineered**: Evite ao máximo complicar coisas simples
 
 ### Kafka
 
