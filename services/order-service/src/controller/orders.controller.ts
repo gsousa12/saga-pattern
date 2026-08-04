@@ -1,6 +1,10 @@
 import { TOPICS } from '@orchestrator/constants';
 import { orders, products } from '@orchestrator/db';
-import { CheckoutBodySchema } from '@orchestrator/schemas';
+import {
+  CheckoutBodySchema,
+  SagaStartCheckoutPayloadSchema,
+  buildKafkaMessage,
+} from '@orchestrator/schemas';
 import { eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -27,9 +31,24 @@ export async function checkout(req: FastifyRequest, reply: FastifyReply) {
   });
 
   const producer = await getProducer();
+
+  const payload = SagaStartCheckoutPayloadSchema.parse({
+    idempotencyKey: body.idempotencyKey,
+    order,
+  });
+
   await producer.send({
     topic: TOPICS.SAGA_START_CHECKOUT,
-    messages: [{ value: JSON.stringify({ idempotencyKey: body.idempotencyKey, order }) }],
+    messages: [
+      {
+        value: buildKafkaMessage(payload, {
+          action: 'Checkout saga initiated',
+          service: 'order-service',
+          topic: TOPICS.SAGA_START_CHECKOUT,
+          idempotencyKey: body.idempotencyKey,
+        }),
+      },
+    ],
   });
 
   return reply.status(202).send({ message: 'Order created', order });

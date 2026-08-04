@@ -1,7 +1,8 @@
 import { TOPICS } from '@orchestrator/constants';
 import { stock } from '@orchestrator/db';
 import {
-  parseKafkaMessage,
+  parseKafkaEnvelope,
+  buildKafkaMessage,
   CommandReserveStockPayloadSchema,
   ReplyStockReservedSuccessPayloadSchema,
   ReplyStockReservedFailPayloadSchema,
@@ -32,7 +33,7 @@ export async function startStockWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = parseKafkaMessage(message.value, CommandReserveStockPayloadSchema);
+          const { payload } = parseKafkaEnvelope(message.value, CommandReserveStockPayloadSchema);
 
           const db = await getDbInstance();
           const producer = await getProducer();
@@ -50,12 +51,18 @@ export async function startStockWorker() {
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
                 {
-                  value: JSON.stringify(
+                  value: buildKafkaMessage(
                     ReplyStockReservedFailPayloadSchema.parse({
                       idempotencyKey,
                       order,
                       reason: 'Stock not found',
                     }),
+                    {
+                      action: 'Stock reservation failed - stock not found',
+                      service: 'stock-service',
+                      topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
+                      idempotencyKey,
+                    },
                   ),
                 },
               ],
@@ -63,18 +70,25 @@ export async function startStockWorker() {
             return;
           }
 
-          const hasSufficientStock = stockRecord.availableQuantity >= order.quantity;
+          const actualAvailable = stockRecord.availableQuantity - stockRecord.reservedQuantity;
+          const hasSufficientStock = actualAvailable >= order.quantity;
           if (!hasSufficientStock) {
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
                 {
-                  value: JSON.stringify(
+                  value: buildKafkaMessage(
                     ReplyStockReservedFailPayloadSchema.parse({
                       idempotencyKey,
                       order,
                       reason: 'Insufficient stock',
                     }),
+                    {
+                      action: 'Stock reservation failed - insufficient stock',
+                      service: 'stock-service',
+                      topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
+                      idempotencyKey,
+                    },
                   ),
                 },
               ],
@@ -85,7 +99,10 @@ export async function startStockWorker() {
           await db.transaction(async (tx) => {
             await tx
               .update(stock)
-              .set({ reservedQuantity: stockRecord.reservedQuantity + order.quantity })
+              .set({
+                availableQuantity: stockRecord.availableQuantity - order.quantity,
+                reservedQuantity: stockRecord.reservedQuantity + order.quantity,
+              })
               .where(eq(stock.id, stockRecord.id));
           });
 
@@ -93,12 +110,18 @@ export async function startStockWorker() {
             topic: TOPICS.REPLY_STOCK_RESERVED_SUCCESS,
             messages: [
               {
-                value: JSON.stringify(
+                value: buildKafkaMessage(
                   ReplyStockReservedSuccessPayloadSchema.parse({
                     idempotencyKey,
                     order,
                     reservedQuantity: order.quantity,
                   }),
+                  {
+                    action: 'Stock reserved successfully',
+                    service: 'stock-service',
+                    topic: TOPICS.REPLY_STOCK_RESERVED_SUCCESS,
+                    idempotencyKey,
+                  },
                 ),
               },
             ],

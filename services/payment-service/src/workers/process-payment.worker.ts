@@ -1,6 +1,7 @@
 import { TOPICS } from '@orchestrator/constants';
 import {
-  parseKafkaMessage,
+  parseKafkaEnvelope,
+  buildKafkaMessage,
   CommandProcessPaymentPayloadSchema,
   ReplyPaymentSuccessPayloadSchema,
   ReplyPaymentFailPayloadSchema,
@@ -30,7 +31,7 @@ export async function startPaymentWorker() {
         eachMessage: async ({ message }: EachMessagePayload) => {
           if (!message.value) return;
 
-          const payload = parseKafkaMessage(message.value, CommandProcessPaymentPayloadSchema);
+          const { payload } = parseKafkaEnvelope(message.value, CommandProcessPaymentPayloadSchema);
 
           const producer = await getProducer();
           const idempotencyKey = payload.idempotencyKey;
@@ -43,8 +44,14 @@ export async function startPaymentWorker() {
               topic: TOPICS.REPLY_PAYMENT_SUCCESS,
               messages: [
                 {
-                  value: JSON.stringify(
+                  value: buildKafkaMessage(
                     ReplyPaymentSuccessPayloadSchema.parse({ idempotencyKey, order }),
+                    {
+                      action: 'Payment processed successfully',
+                      service: 'payment-service',
+                      topic: TOPICS.REPLY_PAYMENT_SUCCESS,
+                      idempotencyKey,
+                    },
                   ),
                 },
               ],
@@ -56,12 +63,18 @@ export async function startPaymentWorker() {
             topic: TOPICS.REPLY_PAYMENT_FAIL,
             messages: [
               {
-                value: JSON.stringify(
+                value: buildKafkaMessage(
                   ReplyPaymentFailPayloadSchema.parse({
                     idempotencyKey,
                     order,
                     reason: 'Payment declined (stub)',
                   }),
+                  {
+                    action: 'Payment processing failed',
+                    service: 'payment-service',
+                    topic: TOPICS.REPLY_PAYMENT_FAIL,
+                    idempotencyKey,
+                  },
                 ),
               },
             ],
