@@ -1,15 +1,15 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
-import type { CreateProductBody } from '@orchestrator/schemas';
+import { Controller, Get } from '@nestjs/common';
+
+// oxlint-disable-next-line @typescript-eslint/consistent-type-imports -- NestJS DI requires value import
+import { ProductsService } from './products.service';
 
 @Controller('products')
 export class ProductsController {
-  @Get()
-  findAll() {
-    return { products: [] };
-  }
+  constructor(private readonly productsService: ProductsService) {}
 
-  @Post()
-  create(@Body() body: CreateProductBody) {
-    return { message: 'Product creation queued', data: body };
+  @Get()
+  async findAll() {
+    const products = await this.productsService.findAll();
+    return { products };
   }
 }

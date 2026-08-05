@@ -10,6 +10,9 @@ const HOST = '0.0.0.0';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+
+  app.enableCors({ origin: true, credentials: true });
+
   await app.listen(PORT, HOST);
 }
 

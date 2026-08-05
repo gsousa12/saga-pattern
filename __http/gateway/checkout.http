@@ -3,7 +3,7 @@ POST http://localhost:3001/checkout
 Content-Type: application/json
 
 {
-  "idempotencyKey": "checkout-111111-abc",
+  "idempotencyKey": "checkout-teste8-abc",
   "productId": "e7849b4f-d947-4849-8135-2decfc117b24",
-  "quantity": 2
+  "quantity": 1
 }

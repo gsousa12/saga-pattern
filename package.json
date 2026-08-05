@@ -9,6 +9,7 @@
     "dev:notification": "pnpm --filter notification-service dev",
     "dev:orchestrator": "pnpm --filter orchestrator-service dev",
     "dev:gateway": "pnpm --filter gateway dev",
+    "dev:client": "pnpm --filter client dev",
     "dev:all": "pnpm build && pnpm --parallel --filter order-service --filter payment-service --filter stock-service --filter notification-service --filter orchestrator-service --filter gateway dev",
     "dev:terminals": "./scripts/dev-terminals.sh",
     "dev:bg": "./scripts/dev-background.sh",

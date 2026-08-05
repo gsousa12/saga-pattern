@@ -5,6 +5,7 @@ export const products = pgTable('products', {
   name: varchar('name', { length: 255 }).notNull(),
   price: real('price').notNull(),
   description: varchar('description', { length: 500 }),
+  image: varchar('image', { length: 1000 }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
