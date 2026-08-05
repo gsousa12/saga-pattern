@@ -4,9 +4,12 @@ import { OrderStatusEnum, SagaStepEnum } from '@orchestrator/enums';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   ReplyStockReleasedSuccessPayloadSchema,
   SagaOrderStatusUpdatedPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -39,6 +42,9 @@ export async function startReleaseSuccessWorker() {
             message.value,
             ReplyStockReleasedSuccessPayloadSchema,
           );
+
+          await randomDelay(3, 8);
+
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {
@@ -49,6 +55,29 @@ export async function startReleaseSuccessWorker() {
           });
 
           const producer = await getProducer();
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      payload.idempotencyKey,
+                      'FAILED',
+                      'Stock released. Order cancelled after rollback.',
+                    ),
+                  ),
+                  {
+                    action: 'Rollback completed',
+                    service: 'orchestrator',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey: payload.idempotencyKey,
+                  },
+                ),
+              },
+            ],
+          });
 
           await producer.send({
             topic: TOPICS.SAGA_ORDER_STATUS_UPDATED,

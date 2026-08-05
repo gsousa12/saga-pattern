@@ -8,6 +8,7 @@ export * from './http/product.js';
 
 export * from './kafka/checkout.js';
 export * from './kafka/envelope.js';
+export * from './kafka/notification.js';
 export * from './kafka/order.js';
 export * from './kafka/stock.js';
 export * from './kafka/payment.js';

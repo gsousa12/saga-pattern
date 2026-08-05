@@ -4,9 +4,12 @@ import { OrderStatusEnum, SagaStepEnum } from '@orchestrator/enums';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   ReplyPaymentSuccessPayloadSchema,
   SagaOrderStatusUpdatedPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -33,6 +36,9 @@ export async function startPaymentSuccessWorker() {
           if (!message.value) return;
 
           const { payload } = parseKafkaEnvelope(message.value, ReplyPaymentSuccessPayloadSchema);
+
+          await randomDelay(4, 5);
+
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {
@@ -43,6 +49,29 @@ export async function startPaymentSuccessWorker() {
           });
 
           const producer = await getProducer();
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      payload.idempotencyKey,
+                      'COMPLETED',
+                      'Payment successful. Order completed!',
+                    ),
+                  ),
+                  {
+                    action: 'Payment succeeded',
+                    service: 'orchestrator',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey: payload.idempotencyKey,
+                  },
+                ),
+              },
+            ],
+          });
 
           await producer.send({
             topic: TOPICS.SAGA_ORDER_STATUS_UPDATED,

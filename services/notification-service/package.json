@@ -8,12 +8,15 @@
   },
   "dependencies": {
     "@orchestrator/constants": "workspace:*",
+    "@orchestrator/kafka": "workspace:*",
+    "@orchestrator/schemas": "workspace:*",
     "@orchestrator/types": "workspace:*",
     "@orchestrator/utils": "workspace:*",
     "fastify": "^4.28.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "kafkajs": "^2.2.4",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0"
   }

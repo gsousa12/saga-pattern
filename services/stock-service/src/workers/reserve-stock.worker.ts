@@ -3,10 +3,13 @@ import { stock } from '@orchestrator/db';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   CommandReserveStockPayloadSchema,
   ReplyStockReservedSuccessPayloadSchema,
   ReplyStockReservedFailPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -35,6 +38,8 @@ export async function startStockWorker() {
 
           const { payload } = parseKafkaEnvelope(message.value, CommandReserveStockPayloadSchema);
 
+          await randomDelay(1, 3);
+
           const db = await getDbInstance();
           const producer = await getProducer();
 
@@ -47,6 +52,29 @@ export async function startStockWorker() {
             .where(eq(stock.productId, order.productId));
 
           if (!stockRecord) {
+            await producer.send({
+              topic: TOPICS.SAGA_NOTIFICATION,
+              messages: [
+                {
+                  value: buildKafkaMessage(
+                    SagaNotificationPayloadSchema.parse(
+                      buildSagaNotificationPayload(
+                        idempotencyKey,
+                        'FAILED',
+                        'Stock reservation failed: product not found.',
+                      ),
+                    ),
+                    {
+                      action: 'Stock reservation failed',
+                      service: 'stock-service',
+                      topic: TOPICS.SAGA_NOTIFICATION,
+                      idempotencyKey,
+                    },
+                  ),
+                },
+              ],
+            });
+
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
@@ -73,6 +101,29 @@ export async function startStockWorker() {
           const actualAvailable = stockRecord.availableQuantity - stockRecord.reservedQuantity;
           const hasSufficientStock = actualAvailable >= order.quantity;
           if (!hasSufficientStock) {
+            await producer.send({
+              topic: TOPICS.SAGA_NOTIFICATION,
+              messages: [
+                {
+                  value: buildKafkaMessage(
+                    SagaNotificationPayloadSchema.parse(
+                      buildSagaNotificationPayload(
+                        idempotencyKey,
+                        'FAILED',
+                        'Stock reservation failed: insufficient stock.',
+                      ),
+                    ),
+                    {
+                      action: 'Stock reservation failed',
+                      service: 'stock-service',
+                      topic: TOPICS.SAGA_NOTIFICATION,
+                      idempotencyKey,
+                    },
+                  ),
+                },
+              ],
+            });
+
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RESERVED_FAIL,
               messages: [
@@ -104,6 +155,29 @@ export async function startStockWorker() {
                 reservedQuantity: stockRecord.reservedQuantity + order.quantity,
               })
               .where(eq(stock.id, stockRecord.id));
+          });
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      idempotencyKey,
+                      'STOCK_RESERVED',
+                      'Stock reserved successfully.',
+                    ),
+                  ),
+                  {
+                    action: 'Stock reserved',
+                    service: 'stock-service',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey,
+                  },
+                ),
+              },
+            ],
           });
 
           await producer.send({

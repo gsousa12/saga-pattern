@@ -2,9 +2,11 @@ import { useState } from 'react';
 
 import type { Product } from '../api/products';
 import { useCheckout } from '../hooks/useCheckout';
+import { useNotifications } from '../hooks/useNotifications';
 import { useProducts } from '../hooks/useProducts';
 import { CheckoutModal } from './CheckoutModal';
 import { ProductCard } from './ProductCard';
+import { SagaStatusModal } from './SagaStatusModal';
 
 export function ProductList() {
   const { data: products, isLoading, error } = useProducts();
@@ -12,13 +14,18 @@ export function ProductList() {
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [activeIdempotencyKey, setActiveIdempotencyKey] = useState<string | null>(null);
+  const [sagaModalOpen, setSagaModalOpen] = useState(false);
+
+  const { data: notificationsData, isLoading: notificationsLoading } =
+    useNotifications(activeIdempotencyKey);
 
   const handleCheckoutClick = (product: Product, quantity: number) => {
     setSelectedProduct(product);
     setSelectedQuantity(quantity);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseCheckoutModal = () => {
     setSelectedProduct(null);
     checkoutMutation.reset();
   };
@@ -35,10 +42,22 @@ export function ProductList() {
       {
         onSuccess: () => {
           setSelectedProduct(null);
+          setActiveIdempotencyKey(idempotencyKey);
+          setSagaModalOpen(true);
           checkoutMutation.reset();
+        },
+        onError: () => {
+          setSelectedProduct(null);
+          setActiveIdempotencyKey(idempotencyKey);
+          setSagaModalOpen(true);
         },
       },
     );
+  };
+
+  const handleCloseSagaModal = () => {
+    setSagaModalOpen(false);
+    setActiveIdempotencyKey(null);
   };
 
   if (isLoading) {
@@ -81,15 +100,17 @@ export function ProductList() {
         isOpen={Boolean(selectedProduct)}
         isLoading={checkoutMutation.isPending}
         error={checkoutMutation.error}
-        onClose={handleCloseModal}
+        onClose={handleCloseCheckoutModal}
         onConfirm={handleConfirmCheckout}
       />
 
-      {checkoutMutation.isSuccess && (
-        <div className="fixed bottom-4 right-4 rounded-md bg-green-600 px-4 py-3 text-white shadow-lg">
-          Order created successfully!
-        </div>
-      )}
+      <SagaStatusModal
+        isOpen={sagaModalOpen}
+        idempotencyKey={activeIdempotencyKey}
+        notifications={notificationsData?.notifications || []}
+        isLoading={notificationsLoading}
+        onClose={handleCloseSagaModal}
+      />
     </div>
   );
 }

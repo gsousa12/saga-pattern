@@ -2,11 +2,13 @@ import { TOPICS } from '@orchestrator/constants';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   CommandProcessPaymentPayloadSchema,
   ReplyPaymentSuccessPayloadSchema,
   ReplyPaymentFailPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
-import { simulateError } from '@orchestrator/utils';
+import { randomDelay, simulateError } from '@orchestrator/utils';
 import type { EachMessagePayload } from 'kafkajs';
 
 import { createConsumer, getProducer, withRetry } from '../_common';
@@ -33,6 +35,8 @@ export async function startPaymentWorker() {
 
           const { payload } = parseKafkaEnvelope(message.value, CommandProcessPaymentPayloadSchema);
 
+          await randomDelay(5, 7);
+
           const producer = await getProducer();
           const idempotencyKey = payload.idempotencyKey;
           const order = payload.order;
@@ -40,6 +44,29 @@ export async function startPaymentWorker() {
           const paymentProcessError = simulateError(80);
 
           if (paymentProcessError) {
+            await producer.send({
+              topic: TOPICS.SAGA_NOTIFICATION,
+              messages: [
+                {
+                  value: buildKafkaMessage(
+                    SagaNotificationPayloadSchema.parse(
+                      buildSagaNotificationPayload(
+                        idempotencyKey,
+                        'PAYMENT_SUCCESS',
+                        'Payment processed successfully.',
+                      ),
+                    ),
+                    {
+                      action: 'Payment processed',
+                      service: 'payment-service',
+                      topic: TOPICS.SAGA_NOTIFICATION,
+                      idempotencyKey,
+                    },
+                  ),
+                },
+              ],
+            });
+
             await producer.send({
               topic: TOPICS.REPLY_PAYMENT_SUCCESS,
               messages: [
@@ -58,6 +85,29 @@ export async function startPaymentWorker() {
             });
             return;
           }
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      idempotencyKey,
+                      'PAYMENT_FAIL',
+                      'Payment processing failed.',
+                    ),
+                  ),
+                  {
+                    action: 'Payment failed',
+                    service: 'payment-service',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey,
+                  },
+                ),
+              },
+            ],
+          });
 
           await producer.send({
             topic: TOPICS.REPLY_PAYMENT_FAIL,

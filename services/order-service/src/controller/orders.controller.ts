@@ -5,6 +5,7 @@ import {
   SagaStartCheckoutPayloadSchema,
   buildKafkaMessage,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import { eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -29,6 +30,8 @@ export async function checkout(req: FastifyRequest, reply: FastifyReply) {
       .returning();
     return result;
   });
+
+  await randomDelay(2, 4);
 
   const producer = await getProducer();
 

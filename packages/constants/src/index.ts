@@ -15,12 +15,14 @@ export const TOPICS = {
   COMMAND_RELEASE_STOCK: 'command_release_stock',
   REPLY_STOCK_RELEASED_SUCCESS: 'reply_stock_released_success',
   SAGA_ORDER_STATUS_UPDATED: 'saga_order_status_updated',
+  SAGA_NOTIFICATION: 'saga_notification',
 } as const;
 
 export const DEFAULTS = {
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/orchestrator',
   KAFKA_BROKERS: 'localhost:9092',
   ORDER_SERVICE_URL: 'http://localhost:3003',
+  NOTIFICATION_SERVICE_URL: 'http://localhost:3006',
 } as const;
 
 export const PORTS = {

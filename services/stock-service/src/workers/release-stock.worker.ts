@@ -3,9 +3,12 @@ import { stock } from '@orchestrator/db';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   CommandReleaseStockPayloadSchema,
   ReplyStockReleasedSuccessPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -34,6 +37,8 @@ export async function startReleaseStockWorker() {
 
           const { payload } = parseKafkaEnvelope(message.value, CommandReleaseStockPayloadSchema);
 
+          await randomDelay(1, 3);
+
           const db = await getDbInstance();
           const producer = await getProducer();
 
@@ -46,6 +51,29 @@ export async function startReleaseStockWorker() {
             .where(eq(stock.productId, order.productId));
 
           if (!stockRecord) {
+            await producer.send({
+              topic: TOPICS.SAGA_NOTIFICATION,
+              messages: [
+                {
+                  value: buildKafkaMessage(
+                    SagaNotificationPayloadSchema.parse(
+                      buildSagaNotificationPayload(
+                        idempotencyKey,
+                        'STOCK_RELEASED',
+                        'Stock released (product not found, nothing to release).',
+                      ),
+                    ),
+                    {
+                      action: 'Stock released',
+                      service: 'stock-service',
+                      topic: TOPICS.SAGA_NOTIFICATION,
+                      idempotencyKey,
+                    },
+                  ),
+                },
+              ],
+            });
+
             await producer.send({
               topic: TOPICS.REPLY_STOCK_RELEASED_SUCCESS,
               messages: [
@@ -73,6 +101,29 @@ export async function startReleaseStockWorker() {
                 reservedQuantity: Math.max(0, stockRecord.reservedQuantity - order.quantity),
               })
               .where(eq(stock.id, stockRecord.id));
+          });
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      idempotencyKey,
+                      'STOCK_RELEASED',
+                      'Stock released successfully.',
+                    ),
+                  ),
+                  {
+                    action: 'Stock released',
+                    service: 'stock-service',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey,
+                  },
+                ),
+              },
+            ],
           });
 
           await producer.send({

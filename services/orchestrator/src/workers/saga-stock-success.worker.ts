@@ -4,9 +4,12 @@ import { SagaStepEnum } from '@orchestrator/enums';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   ReplyStockReservedSuccessPayloadSchema,
   CommandProcessPaymentPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import { eq } from 'drizzle-orm';
 import type { EachMessagePayload } from 'kafkajs';
 
@@ -39,6 +42,9 @@ export async function startStockSuccessWorker() {
             message.value,
             ReplyStockReservedSuccessPayloadSchema,
           );
+
+          await randomDelay(0.2, 0.8);
+
           const db = await getDbInstance();
           const producer = await getProducer();
 
@@ -47,6 +53,29 @@ export async function startStockSuccessWorker() {
               .update(sagaStates)
               .set({ currentStep: SagaStepEnum.PENDING_PAYMENT })
               .where(eq(sagaStates.idempotencyKey, payload.idempotencyKey));
+          });
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      payload.idempotencyKey,
+                      'PENDING_PAYMENT',
+                      'Stock reserved. Processing payment...',
+                    ),
+                  ),
+                  {
+                    action: 'Stock reserved',
+                    service: 'orchestrator',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey: payload.idempotencyKey,
+                  },
+                ),
+              },
+            ],
           });
 
           await producer.send({

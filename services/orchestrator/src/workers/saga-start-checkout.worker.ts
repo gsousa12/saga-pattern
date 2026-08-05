@@ -4,9 +4,12 @@ import { SagaStepEnum } from '@orchestrator/enums';
 import {
   parseKafkaEnvelope,
   buildKafkaMessage,
+  buildSagaNotificationPayload,
   SagaStartCheckoutPayloadSchema,
   CommandReserveStockPayloadSchema,
+  SagaNotificationPayloadSchema,
 } from '@orchestrator/schemas';
+import { randomDelay } from '@orchestrator/utils';
 import type { EachMessagePayload } from 'kafkajs';
 
 import { createConsumer, getDbInstance, getProducer, withRetry } from '../_common';
@@ -33,6 +36,8 @@ export async function startSagaWorker() {
 
           const { payload } = parseKafkaEnvelope(message.value, SagaStartCheckoutPayloadSchema);
 
+          await randomDelay(2, 5);
+
           const db = await getDbInstance();
 
           await db.transaction(async (tx) => {
@@ -47,6 +52,29 @@ export async function startSagaWorker() {
           });
 
           const producer = await getProducer();
+
+          await producer.send({
+            topic: TOPICS.SAGA_NOTIFICATION,
+            messages: [
+              {
+                value: buildKafkaMessage(
+                  SagaNotificationPayloadSchema.parse(
+                    buildSagaNotificationPayload(
+                      payload.idempotencyKey,
+                      'PENDING_STOCK',
+                      'Order created. Waiting for stock reservation.',
+                    ),
+                  ),
+                  {
+                    action: 'Saga started',
+                    service: 'orchestrator',
+                    topic: TOPICS.SAGA_NOTIFICATION,
+                    idempotencyKey: payload.idempotencyKey,
+                  },
+                ),
+              },
+            ],
+          });
 
           await producer.send({
             topic: TOPICS.COMMAND_RESERVE_STOCK,
